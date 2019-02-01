@@ -1,14 +1,14 @@
 
 # Ampere FRU manager
 
-Ampere FRU manager package is new package. It's used to replace with another OpenBMC package (**ipmi-fru-parser**), in order to:
+Ampere FRU Manager package is targeted to replace OpenBMC [ipmi-fru-paser](https://github.com/openbmc/ipmi-fru-parser/) package. It assists in:
 - Unifying the method to access the FRU EEPROM device
 - Improving some limitation of ipmi-fru-parser package
 - Removing the IPMI FRU command implementation
 
 ## Limitation of current FRU handling package (ipmi-fru-parser)
 
-- Mix many functionality into single package, include:
+- Mix many functionality into single package, including:
    - FRU EEPROM handler
      - Handle the D-Bus interface for FRU EEPROM
      - Parse FRU EEPROM data
@@ -16,7 +16,7 @@ Ampere FRU manager package is new package. It's used to replace with another Ope
    - IPMI FRU handler
      - Handle IPMI FRU write command
      - Read/Write the EERPOM device directly
-- Cannot parse the FRU EEPROM device when the Multi Record Area is exist
+- Cannot parse the FRU EEPROM device when the Multi Record Area exists
 - By somehow, the data of FRU EEPROM device is not correct (wrong FRU format), but ipmi-fru-parser cannot provide any information from D-Bus interface to notify the status and require the recovery action
 
 ## Overview about the Implementation
@@ -28,16 +28,16 @@ They are:
 
 ### FRU manager part
 
-This package will handle following:
-- Initialize the D-Bus interface for all FRU EEPROM areas
-- Provide the D-Bus methods for other packages, in oder to update the data on D-Bus interface
-- Provide the D-Bus methods for other packages, in order to support the FRU EEPROM read/write requests
+The package will handle the following:
+- Initializing the D-Bus interface for all FRU EEPROM areas
+- Providing the D-Bus methods for other packages, in order to update the data on D-Bus interface
+- Providing the D-Bus methods for other packages, in order to support the FRU EEPROM read/write requests
 
 ### FRU parser part
 
-This package will handle following:
-- Parse the supported information for all FRU EEPROM areas
-- Provide the D-Bus methods for other packages, in order to support updating new data for all "Custom Info Fields" (**note #01**)
+The package will handle the following:
+- Parsing the supported information for all FRU EEPROM areas
+- Providing the D-Bus methods for other packages, in order to support updating new data for all "Custom Info Fields" (**note #01**)
 
 ### Communication between FRU manager part and FRU parser part
 
@@ -55,16 +55,14 @@ This package will handle following:
           x<----------------------|----------------o                     |
           |  update D-Bus data    |                |                     |
           o---------------------->x                |                     |
-          |                       |                |update Custom Fields |
-          |                       |                x(2)- - - - - - - - ->x
-        |         read/write FRU EERPOM device   |                     |
-        x(1)- - - - - - - - - - | - - - - - - - -|- - - - - - - - - - >x
-            |                       |                |                     |
+          |                       |                |                     |
+          |         read/write FRU EERPOM device   |                     |
+          x(1)- - - - - - - - - - | - - - - - - - -|- - - - - - - - - - >x
+          |                       |                |                     |
 
-(1): main loop to handle:
+(1): main loop of FRU manager to handle:
 - Read/Write FRU EEPROM data from D-Bus interface requests
 - Read/Write FRU EEPROM device requests
-(2): main loop to handle updating Custom Info Fields request
 ```
 
 ## Advantages of new FRU manager package
@@ -74,11 +72,11 @@ This package will handle following:
      - Handle the D-Bus interface for FRU EEPROM
      - Parse FRU EEPROM data
      - Read/Write FRU EEPROM device directly
-- Can parse the FRU EEPROM device when the Multi Record Area is exist
+- Can parse the FRU EEPROM device when the Multi Record Area exists
 - When the data of FRU EEPROM device is not correct (wrong FRU format), it will provide the information on D-Bus interface to notify the status and require the recovery action
 
 
-## Limitation of new FRU manager package
+## Limitations of new FRU manager package
 
 - Have not supported the "Updating the MultiRecord Info - Record fields" functionality
 - Just support single FRU device (FRU ID 0)
@@ -88,23 +86,23 @@ This package will handle following:
 
 ### FRU manager part
 
-FRU manager part is the main part of FRU manager package. The main responsibility of FRU manager part are:
+FRU manager part is the main part of FRU manager package. The main responsibilities of FRU manager part are:
 - Handle D-Bus interface
 - Handle the FRU EEPROM device
 
-When the FRU manager part is stared, it will:
-- Firstly, initialize the D-Bus interface for all FRU EEPROM areas with default value.
-- Secondly, register the supported methods to D-Bus interface, in order to support:
+When the FRU manager part is started, it will:
+- Initialize the D-Bus interface for all FRU EEPROM areas with default value.
+- Register the supported methods to D-Bus interface in order to support:
   - Update new data for D-Bus interface
   - Read/write the FRU EEPROM device
-- Finally, enter the main loop to handle the income request
+- Enter the main loop to handle the incoming requests
 
 #### D-Bus interface implementation
 
 The FRU manager part will create below D-Bus interface for all "FRU Info Areas" with the default value for each property is "**Error! Need to update the EEPROM**".
 This value will be updated by **FRU parser part** later, after **FRU parser part** parses the FRU EEPROM data and request **FRU manager part** to update the D-Bus data via supported D-Bus methods.
 
-So, in case of **bad FRU EEPROM image** (**note 2**), this value will be **NOT** updated. After that, we'll know when the FRU EEPROM device need to be recovered. 
+In case of **bad FRU EEPROM image** (**note 2**), this value will **NOT** be updated. So we'll know when the FRU EEPROM device need to be recovered.
 
 ##### FRU Board Info Area
 ```
@@ -190,7 +188,6 @@ Properties:
 - Record8  (Read Only)
 ```
 #### D-Bus supported methods implementation
-
 ```
 Service name: xyz.openbmc_project.Inventory.FRU
 Interface: xyz.openbmc_project.Inventory.FRU.FRUManager
@@ -213,17 +210,16 @@ Supported Methods:
 
 ### FRU parser part
 
-FRU parser part is the sub-part of FRU manager package. The main responsibility of FRU parser part are:
-- Read the FRU EEPROM device to parse the FRU data
-- Handle the D-Bus request for "Updating the MultiRecord Info - Record fields" request (**note 1**)
+FRU parser part is the sub-part of FRU manager package. The main responsibilities of FRU parser part are:
+- Reading the FRU EEPROM device to parse the FRU data
+- Handling the D-Bus request for "Updating the MultiRecord Info - Record fields" request (**note 1**)
 
-When the FRU parser part is stared, it will:
-- Firstly, read the FRU EEPROM device and parse the supported data.
-- Secondly, if the parser processing is:
+When the FRU parser part is started, it will:
+- Read the FRU EEPROM device and parse the supported data.
+- If the parser processing is:
   - Completed: Request **FRU manager part** to update the data for D-Bus interface
-  - **NOT** completed (bad FRU EEPROM image (**note 2**)), return the **FAILED** status and stop handling any request. 
-- Finally, enter the main loop to handle the income request
-
+  - **NOT** completed (bad FRU EEPROM image (**note 2**)), return the **FAILED** status and stop handling any request.
+- Enter the main loop to handle the income requests
 
 #### D-Bus supported methods implementation
 
@@ -242,8 +238,12 @@ Supported Methods:
 
 ## Notes
 
-1. This functionality is specific for Ampere OpenBMC framework only.
+1. Currently this functionality is specific for Ampere OpenBMC framework only.
+   In order to providing the D-Bus supported methods to update some specific info (not whole FRU EEPROM image), such as:
+- BMC MAC Address
+- UUID
+- Etc
 2. The root-cause of "bad FRU EEPROM image" can be:
 - Wrong checksum
 - Wrong header format
-- Data format is not correct (follow the Platform Management FRU Information Storage Definition specification)
+- Data format is not correct (follow the [Platform Management FRU Information Storage Definition](https://www.intel.com/content/dam/www/public/us/en/documents/product-briefs/platform-management-fru-document-rev-1-2-feb-2013.pdf) specification)
